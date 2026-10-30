@@ -1,0 +1,709 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Nenhuma conexão de rede é permitida: o app funciona 100% offline e não consegue enviar dados para lugar nenhum. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+<meta name="referrer" content="no-referrer">
+<title>Cofre de Senhas</title>
+<style>
+:root {
+  --bg: #f4f5f7; --surface: #ffffff; --surface-2: #eef0f3; --text: #16181d; --muted: #646b78;
+  --border: #dcdfe5; --accent: #2f6fed; --accent-text: #ffffff; --danger: #c93636; --ok: #1f8a4c;
+  --shadow: 0 1px 2px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.06);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111317; --surface: #1a1d23; --surface-2: #23272f; --text: #e8eaee; --muted: #9aa1ad;
+    --border: #2e333c; --accent: #5b8cff; --accent-text: #0b0d12; --danger: #ff6b6b; --ok: #4cc983;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 4px 16px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111317; --surface: #1a1d23; --surface-2: #23272f; --text: #e8eaee; --muted: #9aa1ad;
+  --border: #2e333c; --accent: #5b8cff; --accent-text: #0b0d12; --danger: #ff6b6b; --ok: #4cc983;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 4px 16px rgba(0,0,0,.3);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+button, input, textarea, select { font: inherit; color: inherit; }
+main { max-width: 760px; margin: 0 auto; padding: 16px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); }
+.auth { max-width: 400px; margin: 10vh auto 0; padding: 28px 24px; display: grid; gap: 12px; }
+.auth h1 { margin: 0; font-size: 22px; }
+.logo { width: 48px; height: 48px; border-radius: 12px; background: var(--accent); color: var(--accent-text); display: grid; place-items: center; }
+.muted { color: var(--muted); margin: 0; font-size: 14px; }
+.err { color: var(--danger); margin: 0; min-height: 1.2em; font-size: 14px; }
+label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+input, textarea, select { width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); }
+input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: transparent; }
+textarea { resize: vertical; min-height: 70px; }
+button { cursor: pointer; border: 1px solid var(--border); background: var(--surface-2); border-radius: 8px; padding: 8px 12px; }
+button:hover { filter: brightness(.97); }
+button.primary { background: var(--accent); color: var(--accent-text); border-color: transparent; font-weight: 600; }
+button.danger { color: var(--danger); }
+button.link { background: none; border: none; color: var(--accent); padding: 4px; }
+button.icon { padding: 6px 8px; line-height: 0; }
+button:disabled { opacity: .6; cursor: wait; }
+.row { display: flex; gap: 8px; align-items: center; }
+.row > input { flex: 1; min-width: 0; }
+.mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
+
+header.top { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+header.top h1 { font-size: 18px; margin: 0 8px 0 0; display: flex; gap: 8px; align-items: center; }
+header.top .search { flex: 1; min-width: 160px; }
+details.menu { position: relative; }
+details.menu > summary { list-style: none; cursor: pointer; border: 1px solid var(--border); background: var(--surface-2); border-radius: 8px; padding: 8px 10px; line-height: 0; }
+details.menu > summary::-webkit-details-marker { display: none; }
+details.menu .items { position: absolute; right: 0; top: calc(100% + 6px); z-index: 5; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); padding: 6px; min-width: 220px; display: grid; }
+details.menu .items button { border: none; background: none; text-align: left; padding: 9px 10px; border-radius: 6px; }
+details.menu .items button:hover { background: var(--surface-2); }
+
+.banner { padding: 10px 14px; margin-bottom: 12px; display: flex; gap: 10px; align-items: center; justify-content: space-between; border-left: 4px solid #e0a100; flex-wrap: wrap; }
+.list { display: grid; gap: 8px; }
+.entry { padding: 12px 14px; }
+.entry .head { display: flex; gap: 12px; align-items: center; cursor: pointer; }
+.avatar { width: 36px; height: 36px; border-radius: 9px; background: var(--surface-2); display: grid; place-items: center; font-weight: 700; color: var(--accent); flex: none; }
+.entry .title { flex: 1; min-width: 0; }
+.entry .title b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.entry .title span { color: var(--muted); font-size: 13px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.otp { display: flex; align-items: center; gap: 8px; flex: none; }
+.otp .code { font-size: 20px; font-weight: 700; letter-spacing: 1px; color: var(--accent); }
+.otp .code.low { color: var(--danger); }
+.ring { width: 22px; height: 22px; transform: rotate(-90deg); }
+.ring circle { fill: none; stroke-width: 4; }
+.ring .bg { stroke: var(--surface-2); }
+.ring .fg { stroke: var(--accent); stroke-linecap: round; transition: stroke-dashoffset .9s linear; }
+.actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+.actions button { font-size: 13px; padding: 6px 10px; }
+.details { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); display: grid; gap: 6px; font-size: 14px; }
+.details .k { color: var(--muted); font-size: 12px; }
+.details .v { word-break: break-all; white-space: pre-wrap; }
+.empty { text-align: center; padding: 48px 16px; color: var(--muted); }
+
+dialog { border: 1px solid var(--border); border-radius: 14px; background: var(--surface); color: var(--text); padding: 0; width: min(480px, calc(100vw - 32px)); box-shadow: var(--shadow); }
+dialog::backdrop { background: rgba(0,0,0,.45); }
+dialog form { padding: 20px; display: grid; gap: 12px; }
+dialog h2 { margin: 0; font-size: 18px; }
+.foot { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; margin-top: 4px; }
+.foot .spacer { flex: 1; }
+.genout { font-size: 17px; padding: 12px; background: var(--surface-2); border-radius: 8px; word-break: break-all; min-height: 50px; }
+.checks { display: flex; gap: 14px; flex-wrap: wrap; }
+.checks label { display: flex; flex-direction: row; gap: 6px; align-items: center; color: var(--text); font-size: 14px; }
+.checks input { width: auto; }
+.meter { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+.meter i { display: block; height: 100%; width: 0; transition: width .2s, background .2s; }
+.hint { font-size: 12px; color: var(--muted); }
+
+#toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px); background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 10px; opacity: 0; pointer-events: none; transition: .2s; font-size: 14px; max-width: calc(100vw - 32px); }
+#toast.show { opacity: 1; transform: translateX(-50%); }
+</style>
+</head>
+<body>
+<main id="app"></main>
+<dialog id="dlg"></dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+
+// ---------- Configuração ----------
+const STORE_KEY = 'cofre.v1';
+const ITER = 600000;          // PBKDF2-SHA256 (recomendação OWASP 2023+)
+const AUTO_LOCK_MS = 5 * 60 * 1000;
+const CLIPBOARD_CLEAR_MS = 30 * 1000;
+
+const enc = new TextEncoder(), dec = new TextDecoder();
+let S = null;                 // sessão desbloqueada: { key, salt, iter, vault }
+
+// ---------- Utilidades ----------
+const b64 = {
+  to(u8) { let s = ''; for (const b of u8) s += String.fromCharCode(b); return btoa(s); },
+  from(str) { return Uint8Array.from(atob(str), c => c.charCodeAt(0)); }
+};
+
+function h(tag, attrs = {}, ...kids) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'class') el.className = v;
+    else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+    else if (v === true) el.setAttribute(k, '');
+    else if (v !== false && v != null) el.setAttribute(k, v);
+  }
+  for (const k of kids.flat()) if (k != null && k !== false) el.append(k instanceof Node ? k : String(k));
+  return el;
+}
+
+// SVGs estáticos (nunca contêm dados do usuário)
+const ICONS = {
+  lock: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
+  dots: '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>',
+  eye: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+  dice: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>'
+};
+function icon(name) { const s = h('span', { 'aria-hidden': 'true' }); s.innerHTML = ICONS[name]; return s.firstChild; }
+
+function mount(...nodes) { const app = document.getElementById('app'); app.replaceChildren(...nodes); }
+function field(text, input, hint) { return h('label', {}, text, input, hint ? h('span', { class: 'hint' }, hint) : null); }
+function busy(btn, on, text) { btn.disabled = on; if (text) btn.textContent = text; }
+
+let toastTimer;
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+let clipTimer;
+async function copy(text, what) {
+  try { await navigator.clipboard.writeText(text); }
+  catch {
+    const ta = h('textarea', { style: 'position:fixed;opacity:0' }); ta.value = text;
+    document.body.append(ta); ta.select(); document.execCommand('copy'); ta.remove();
+  }
+  toast(`${what} copiado — a área de transferência será limpa em 30s`);
+  clearTimeout(clipTimer);
+  clipTimer = setTimeout(() => navigator.clipboard.writeText('').catch(() => {}), CLIPBOARD_CLEAR_MS);
+}
+
+// ---------- Criptografia (WebCrypto: PBKDF2 + AES-256-GCM) ----------
+async function deriveKey(password, salt, iterations) {
+  const base = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations, hash: 'SHA-256' },
+    base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+}
+
+async function seal(key, salt, iter, obj) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(JSON.stringify(obj))));
+  return { app: 'cofre', v: 1, kdf: 'PBKDF2-SHA256', iter, salt: b64.to(salt), iv: b64.to(iv), ct: b64.to(ct) };
+}
+
+// Lança erro se a senha estiver errada (a autenticação do GCM falha).
+async function unseal(blob, password) {
+  const salt = b64.from(blob.salt);
+  const key = await deriveKey(password, salt, blob.iter);
+  const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64.from(blob.iv) }, key, b64.from(blob.ct));
+  return { key, salt, iter: blob.iter, vault: JSON.parse(dec.decode(pt)) };
+}
+
+function readStored() {
+  const raw = localStorage.getItem(STORE_KEY);
+  return raw ? JSON.parse(raw) : null;
+}
+
+async function persist() {
+  S.vault.lastChange = Date.now();
+  const blob = await seal(S.key, S.salt, S.iter, S.vault);
+  localStorage.setItem(STORE_KEY, JSON.stringify(blob));
+  return blob;
+}
+
+function isValidBlob(b) {
+  return b && b.app === 'cofre' && typeof b.salt === 'string' && typeof b.iv === 'string'
+    && typeof b.ct === 'string' && Number.isInteger(b.iter) && b.iter >= 100000;
+}
+
+// ---------- 2FA: TOTP (RFC 6238) ----------
+function base32Decode(str) {
+  const alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  const s = str.toUpperCase().replace(/[\s=-]/g, '');
+  if (!s) throw new Error('Segredo vazio');
+  let bits = 0, val = 0; const out = [];
+  for (const c of s) {
+    const i = alpha.indexOf(c);
+    if (i < 0) throw new Error('O segredo 2FA tem caracteres inválidos (use base32: A–Z e 2–7)');
+    val = ((val << 5) | i) & 0xffff; bits += 5;
+    if (bits >= 8) { out.push((val >>> (bits - 8)) & 255); bits -= 8; }
+  }
+  return new Uint8Array(out);
+}
+
+async function totp(otp, t = Date.now()) {
+  const { secret, digits = 6, period = 30, algorithm = 'SHA-1' } = otp;
+  let counter = Math.floor(t / 1000 / period);
+  const msg = new Uint8Array(8);
+  for (let i = 7; i >= 0; i--) { msg[i] = counter & 255; counter = Math.floor(counter / 256); }
+  const key = await crypto.subtle.importKey('raw', base32Decode(secret), { name: 'HMAC', hash: algorithm }, false, ['sign']);
+  const hm = new Uint8Array(await crypto.subtle.sign('HMAC', key, msg));
+  const o = hm[hm.length - 1] & 15;
+  const bin = ((hm[o] & 127) << 24) | (hm[o + 1] << 16) | (hm[o + 2] << 8) | hm[o + 3];
+  return String(bin % 10 ** digits).padStart(digits, '0');
+}
+
+// Aceita o segredo puro (ex.: "JBSW Y3DP EHPK 3PXP") ou um link otpauth://totp/...
+function parseOtp(input) {
+  input = input.trim();
+  if (!input) return null;
+  const m = input.match(/^otpauth:\/\/([^/]+)\/([^?]*)\??(.*)$/i);
+  if (!m) return { secret: input.replace(/\s/g, '').toUpperCase(), digits: 6, period: 30, algorithm: 'SHA-1' };
+  if (m[1].toLowerCase() !== 'totp') throw new Error('Apenas códigos TOTP (baseados em tempo) são suportados');
+  const p = new URLSearchParams(m[3]);
+  const label = decodeURIComponent(m[2]);
+  const algo = { SHA1: 'SHA-1', SHA256: 'SHA-256', SHA512: 'SHA-512' }[(p.get('algorithm') || 'SHA1').toUpperCase()];
+  if (!algo) throw new Error('Algoritmo 2FA não suportado');
+  const secret = (p.get('secret') || '').replace(/\s/g, '').toUpperCase();
+  if (!secret) throw new Error('O link otpauth não tem segredo');
+  const digits = parseInt(p.get('digits') || '6', 10), period = parseInt(p.get('period') || '30', 10);
+  if (![6, 7, 8].includes(digits) || !(period > 0)) throw new Error('Parâmetros 2FA inválidos');
+  const [issuerFromLabel, ...rest] = label.split(':');
+  return {
+    secret, digits, period, algorithm: algo,
+    issuer: p.get('issuer') || (rest.length ? issuerFromLabel : ''),
+    account: (rest.length ? rest.join(':') : label).trim()
+  };
+}
+
+function otpToText(otp) {
+  if (!otp) return '';
+  if (otp.digits === 6 && otp.period === 30 && otp.algorithm === 'SHA-1') return otp.secret;
+  const algo = otp.algorithm.replace('-', '');
+  return `otpauth://totp/x?secret=${otp.secret}&digits=${otp.digits}&period=${otp.period}&algorithm=${algo}`;
+}
+
+// ---------- Gerador de senhas ----------
+function randInt(n) {
+  const lim = Math.floor(0x100000000 / n) * n, a = new Uint32Array(1);
+  do crypto.getRandomValues(a); while (a[0] >= lim);
+  return a[0] % n;
+}
+const POOLS = {
+  lower: 'abcdefghijkmnopqrstuvwxyz',
+  upper: 'ABCDEFGHJKLMNPQRSTUVWXYZ',
+  digits: '23456789',
+  symbols: '!@#$%&*+-=?_.:;'
+};
+function genPassword(len, sets) {
+  const pools = Object.keys(POOLS).filter(k => sets[k]).map(k => POOLS[k]);
+  if (!pools.length) pools.push(POOLS.lower);
+  const all = pools.join('');
+  const chars = pools.map(p => p[randInt(p.length)]);
+  while (chars.length < len) chars.push(all[randInt(all.length)]);
+  for (let i = chars.length - 1; i > 0; i--) { const j = randInt(i + 1); [chars[i], chars[j]] = [chars[j], chars[i]]; }
+  return chars.join('');
+}
+
+// Estimativa simples de força (bits de entropia aproximados)
+function strength(pw) {
+  let pool = 0;
+  if (/[a-z]/.test(pw)) pool += 26;
+  if (/[A-Z]/.test(pw)) pool += 26;
+  if (/\d/.test(pw)) pool += 10;
+  if (/[^a-zA-Z\d]/.test(pw)) pool += 20;
+  const bits = pw.length * Math.log2(pool || 1);
+  if (bits < 40) return { pct: 20, color: 'var(--danger)', label: 'Fraca' };
+  if (bits < 60) return { pct: 45, color: '#e0a100', label: 'Razoável' };
+  if (bits < 80) return { pct: 75, color: 'var(--ok)', label: 'Boa' };
+  return { pct: 100, color: 'var(--ok)', label: 'Excelente' };
+}
+function meterFor(input) {
+  const bar = h('i'), lbl = h('span', { class: 'hint' });
+  const update = () => { const s = strength(input.value); bar.style.width = input.value ? s.pct + '%' : 0; bar.style.background = s.color; lbl.textContent = input.value ? 'Força: ' + s.label : ''; };
+  input.addEventListener('input', update);
+  return [h('div', { class: 'meter' }, bar), lbl, update];
+}
+
+// ---------- Bloqueio automático ----------
+let idleTimer;
+function resetIdle() {
+  clearTimeout(idleTimer);
+  if (S) idleTimer = setTimeout(() => lock('Cofre bloqueado por inatividade'), AUTO_LOCK_MS);
+}
+['pointerdown', 'keydown', 'scroll', 'touchstart'].forEach(ev => addEventListener(ev, resetIdle, { passive: true }));
+document.addEventListener('click', e => {
+  for (const m of document.querySelectorAll('details.menu[open]')) if (!m.contains(e.target)) m.open = false;
+});
+
+function lock(msg) {
+  S = null;
+  codeCache.clear();
+  clearInterval(ticker);
+  const dlg = document.getElementById('dlg'); if (dlg.open) dlg.close();
+  screenLock(msg);
+}
+
+// ---------- Telas: criar / desbloquear ----------
+function screenSetup() {
+  const pw = h('input', { type: 'password', autocomplete: 'new-password' });
+  const pw2 = h('input', { type: 'password', autocomplete: 'new-password' });
+  const [meter, meterLbl] = meterFor(pw);
+  const err = h('p', { class: 'err' });
+  const btn = h('button', { class: 'primary', type: 'submit' }, 'Criar cofre');
+  const form = h('form', {
+    class: 'card auth', onsubmit: async e => {
+      e.preventDefault();
+      if (pw.value.length < 10) return void (err.textContent = 'Use pelo menos 10 caracteres.');
+      if (pw.value !== pw2.value) return void (err.textContent = 'As senhas não conferem.');
+      busy(btn, true, 'Criando…');
+      const salt = crypto.getRandomValues(new Uint8Array(16));
+      const key = await deriveKey(pw.value, salt, ITER);
+      S = { key, salt, iter: ITER, vault: { entries: [], lastBackup: null } };
+      await persist();
+      screenMain();
+    }
+  },
+    h('div', { class: 'logo' }, icon('lock')),
+    h('h1', {}, 'Criar seu cofre'),
+    h('p', { class: 'muted' }, 'Escolha uma senha mestra forte. Ela criptografa tudo neste dispositivo e não pode ser recuperada — se você esquecer, os dados se perdem.'),
+    field('Senha mestra', pw), meter, meterLbl,
+    field('Confirmar senha mestra', pw2),
+    err, btn,
+    h('button', { type: 'button', class: 'link', onclick: importBackup }, 'Restaurar de um arquivo de backup')
+  );
+  mount(form); pw.focus();
+}
+
+function screenLock(msg) {
+  const pw = h('input', { type: 'password', autocomplete: 'current-password' });
+  const err = h('p', { class: 'err' }, msg || '');
+  const btn = h('button', { class: 'primary', type: 'submit' }, 'Desbloquear');
+  const form = h('form', {
+    class: 'card auth', onsubmit: async e => {
+      e.preventDefault();
+      if (!pw.value) return;
+      busy(btn, true, 'Desbloqueando…'); err.textContent = '';
+      try {
+        S = await unseal(readStored(), pw.value);
+        screenMain();
+      } catch {
+        await new Promise(r => setTimeout(r, 600));
+        err.textContent = 'Senha incorreta.'; busy(btn, false, 'Desbloquear'); pw.select();
+      }
+    }
+  },
+    h('div', { class: 'logo' }, icon('lock')),
+    h('h1', {}, 'Cofre bloqueado'),
+    h('p', { class: 'muted' }, 'Digite sua senha mestra.'),
+    field('Senha mestra', pw), err, btn,
+    h('button', { type: 'button', class: 'link', onclick: importBackup }, 'Restaurar de um arquivo de backup')
+  );
+  mount(form); pw.focus();
+}
+
+// ---------- Tela principal ----------
+let query = '';
+let openId = null;
+let ticker;
+const codeCache = new Map();   // id -> { counter, code }
+
+function screenMain() {
+  resetIdle();
+  const search = h('input', { class: 'search', type: 'search', placeholder: 'Buscar…', value: query, oninput: e => { query = e.target.value; renderList(); } });
+  const menu = h('details', { class: 'menu' },
+    h('summary', { title: 'Menu', 'aria-label': 'Menu' }, icon('dots')),
+    h('div', { class: 'items' },
+      h('button', { onclick: () => { menu.open = false; dlgGenerator(); } }, 'Gerador de senhas'),
+      h('button', { onclick: () => { menu.open = false; exportBackup(); } }, 'Exportar backup criptografado'),
+      h('button', { onclick: () => { menu.open = false; importBackup(); } }, 'Restaurar backup'),
+      h('button', { onclick: () => { menu.open = false; dlgChangeMaster(); } }, 'Trocar senha mestra'),
+      h('button', { onclick: () => { menu.open = false; toggleTheme(); } }, 'Alternar tema claro/escuro'),
+      h('button', { onclick: () => lock() }, 'Bloquear agora')
+    )
+  );
+  mount(
+    h('header', { class: 'top' },
+      h('h1', {}, icon('lock'), 'Cofre'),
+      search,
+      h('button', { class: 'primary', onclick: () => dlgEdit(null) }, '+ Novo'),
+      h('button', { class: 'icon', title: 'Bloquear', 'aria-label': 'Bloquear', onclick: () => lock() }, icon('lock')),
+      menu
+    ),
+    h('div', { id: 'banner' }),
+    h('div', { id: 'list', class: 'list' })
+  );
+  renderList();
+  clearInterval(ticker);
+  ticker = setInterval(tick, 1000);
+}
+
+function renderBanner() {
+  const b = document.getElementById('banner'); if (!b) return;
+  const v = S.vault;
+  const needs = v.entries.length && (!v.lastBackup || v.lastChange > v.lastBackup);
+  b.replaceChildren(needs ? h('div', { class: 'card banner' },
+    h('span', {}, v.lastBackup ? 'Há alterações sem backup.' : 'Você ainda não fez backup. Se os dados do navegador forem apagados, o cofre se perde.'),
+    h('button', { onclick: exportBackup }, 'Exportar backup')
+  ) : '');
+}
+
+function renderList() {
+  const list = document.getElementById('list'); if (!list) return;
+  renderBanner();
+  const q = query.trim().toLowerCase();
+  const items = S.vault.entries
+    .filter(e => !q || [e.name, e.username, e.url, e.notes].some(x => (x || '').toLowerCase().includes(q)))
+    .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }));
+
+  if (!items.length) {
+    list.replaceChildren(h('div', { class: 'empty' },
+      S.vault.entries.length ? 'Nada encontrado.' : 'Seu cofre está vazio. Clique em “+ Novo” para adicionar a primeira senha ou código 2FA.'));
+    return;
+  }
+  list.replaceChildren(...items.map(entryCard));
+  tick();
+}
+
+function entryCard(e) {
+  const isOpen = openId === e.id;
+  const otpBox = e.otp ? h('div', { class: 'otp', 'data-otp': e.id },
+    h('span', { class: 'code mono' }, '······'),
+    ringSvg()
+  ) : null;
+
+  const pwSpan = h('span', { class: 'v mono' }, '••••••••••');
+  let shown = false;
+  const details = isOpen ? h('div', { class: 'details' },
+    e.password ? h('div', {}, h('div', { class: 'k' }, 'Senha'),
+      h('div', { class: 'row' }, pwSpan, h('button', { class: 'icon', title: 'Mostrar/ocultar', onclick: () => { shown = !shown; pwSpan.textContent = shown ? e.password : '••••••••••'; } }, icon('eye')))) : null,
+    e.url ? h('div', {}, h('div', { class: 'k' }, 'Site'), /^https?:\/\//i.test(e.url)
+      ? h('a', { class: 'v', href: e.url, target: '_blank', rel: 'noopener noreferrer' }, e.url)
+      : h('div', { class: 'v' }, e.url)) : null,
+    e.notes ? h('div', {}, h('div', { class: 'k' }, 'Notas'), h('div', { class: 'v' }, e.notes)) : null,
+    h('div', { class: 'hint' }, 'Atualizado em ' + new Date(e.updated).toLocaleString('pt-BR'))
+  ) : null;
+
+  return h('div', { class: 'card entry' },
+    h('div', { class: 'head', onclick: () => { openId = isOpen ? null : e.id; renderList(); } },
+      h('div', { class: 'avatar' }, (e.name.trim()[0] || '?').toUpperCase()),
+      h('div', { class: 'title' }, h('b', {}, e.name), h('span', {}, e.username || (e.otp ? 'Somente código 2FA' : ''))),
+      otpBox
+    ),
+    h('div', { class: 'actions' },
+      e.username ? h('button', { onclick: () => copy(e.username, 'Usuário') }, 'Copiar usuário') : null,
+      e.password ? h('button', { onclick: () => copy(e.password, 'Senha') }, 'Copiar senha') : null,
+      e.otp ? h('button', { onclick: async () => copy(await totp(e.otp), 'Código 2FA') }, 'Copiar código') : null,
+      h('button', { onclick: () => dlgEdit(e) }, 'Editar')
+    ),
+    details
+  );
+}
+
+function ringSvg() {
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg'); svg.setAttribute('viewBox', '0 0 24 24'); svg.setAttribute('class', 'ring');
+  for (const cls of ['bg', 'fg']) {
+    const c = document.createElementNS(ns, 'circle');
+    c.setAttribute('cx', 12); c.setAttribute('cy', 12); c.setAttribute('r', 9); c.setAttribute('class', cls);
+    if (cls === 'fg') c.setAttribute('stroke-dasharray', String(2 * Math.PI * 9));
+    svg.append(c);
+  }
+  return svg;
+}
+
+async function tick() {
+  if (!S) return;
+  const now = Date.now();
+  for (const box of document.querySelectorAll('[data-otp]')) {
+    const e = S.vault.entries.find(x => x.id === box.dataset.otp);
+    if (!e || !e.otp) continue;
+    const period = e.otp.period, counter = Math.floor(now / 1000 / period);
+    const left = period - Math.floor((now / 1000) % period);
+    let c = codeCache.get(e.id);
+    if (!c || c.counter !== counter) {
+      try { c = { counter, code: await totp(e.otp, now) }; } catch { c = { counter, code: 'erro' }; }
+      codeCache.set(e.id, c);
+    }
+    const codeEl = box.querySelector('.code');
+    const half = c.code.length / 2;
+    codeEl.textContent = c.code.length > 5 ? c.code.slice(0, Math.ceil(half)) + ' ' + c.code.slice(Math.ceil(half)) : c.code;
+    codeEl.classList.toggle('low', left <= 5);
+    const fg = box.querySelector('.fg'), len = 2 * Math.PI * 9;
+    fg.setAttribute('stroke-dashoffset', String(len * (1 - left / period)));
+  }
+}
+
+// ---------- Diálogos ----------
+function openDialog(form) {
+  const dlg = document.getElementById('dlg');
+  dlg.replaceChildren(form);
+  if (!dlg.open) dlg.showModal();
+  return dlg;
+}
+function closeDialog() { document.getElementById('dlg').close(); }
+
+function dlgEdit(entry) {
+  const isNew = !entry;
+  const e = entry || {};
+  const name = h('input', { value: e.name || '', required: true, placeholder: 'Ex.: Gmail, Banco, GitHub' });
+  const url = h('input', { value: e.url || '', placeholder: 'https://…', inputmode: 'url' });
+  const user = h('input', { value: e.username || '', autocomplete: 'off', placeholder: 'e-mail ou usuário' });
+  const pw = h('input', { type: 'password', value: e.password || '', autocomplete: 'new-password', class: 'mono' });
+  const [meter, meterLbl, updMeter] = meterFor(pw);
+  const otp = h('input', { value: otpToText(e.otp), class: 'mono', autocomplete: 'off', placeholder: 'Chave secreta ou link otpauth://…' });
+  const otpPreview = h('span', { class: 'hint' });
+  const notes = h('textarea', {}, e.notes || '');
+  const err = h('p', { class: 'err' });
+
+  const previewOtp = async () => {
+    otpPreview.textContent = ''; err.textContent = '';
+    if (!otp.value.trim()) return;
+    try {
+      const o = parseOtp(otp.value);
+      otpPreview.textContent = 'Código atual: ' + await totp(o);
+      if (!name.value.trim() && o.issuer) name.value = o.issuer;
+      if (!user.value.trim() && o.account) user.value = o.account;
+    } catch (ex) { otpPreview.textContent = ''; err.textContent = ex.message; }
+  };
+  otp.addEventListener('change', previewOtp);
+  if (e.otp) previewOtp();
+
+  const form = h('form', {
+    method: 'dialog', onsubmit: async ev => {
+      ev.preventDefault();
+      err.textContent = '';
+      if (!name.value.trim()) return void (err.textContent = 'Dê um nome ao item.');
+      let otpObj = null;
+      try {
+        otpObj = parseOtp(otp.value);
+        if (otpObj) { await totp(otpObj); delete otpObj.issuer; delete otpObj.account; }
+      } catch (ex) { return void (err.textContent = ex.message); }
+      const data = {
+        name: name.value.trim(), url: url.value.trim(), username: user.value.trim(),
+        password: pw.value, otp: otpObj, notes: notes.value, updated: Date.now()
+      };
+      if (isNew) S.vault.entries.push({ id: crypto.randomUUID(), created: Date.now(), ...data });
+      else Object.assign(entry, data);
+      codeCache.delete(e.id);
+      await persist();
+      closeDialog(); renderList();
+      toast(isNew ? 'Item adicionado' : 'Alterações salvas');
+    }
+  },
+    h('h2', {}, isNew ? 'Novo item' : 'Editar item'),
+    field('Nome', name),
+    field('Site', url),
+    field('Usuário', user),
+    h('label', {}, 'Senha',
+      h('div', { class: 'row' }, pw,
+        h('button', { type: 'button', class: 'icon', title: 'Mostrar/ocultar', onclick: () => { pw.type = pw.type === 'password' ? 'text' : 'password'; } }, icon('eye')),
+        h('button', { type: 'button', class: 'icon', title: 'Gerar senha forte', onclick: () => { pw.value = genPassword(20, { lower: 1, upper: 1, digits: 1, symbols: 1 }); pw.type = 'text'; updMeter(); } }, icon('dice'))
+      )),
+    meter, meterLbl,
+    field('Código 2FA (opcional)', otp, 'Ao ativar o 2FA num site, escolha “não consigo ler o QR code” / “inserir chave manualmente” e cole a chave aqui.'),
+    otpPreview,
+    field('Notas', notes),
+    err,
+    h('div', { class: 'foot' },
+      !isNew ? h('button', {
+        type: 'button', class: 'danger', onclick: async () => {
+          if (!confirm(`Excluir “${entry.name}”? Isso não pode ser desfeito (a não ser por um backup).`)) return;
+          S.vault.entries = S.vault.entries.filter(x => x.id !== entry.id);
+          await persist(); closeDialog(); renderList(); toast('Item excluído');
+        }
+      }, 'Excluir') : null,
+      h('span', { class: 'spacer' }),
+      h('button', { type: 'button', onclick: closeDialog }, 'Cancelar'),
+      h('button', { type: 'submit', class: 'primary' }, 'Salvar')
+    )
+  );
+  openDialog(form);
+  name.focus();
+}
+
+function dlgGenerator() {
+  const out = h('div', { class: 'genout mono' });
+  const len = h('input', { type: 'range', min: 8, max: 64, value: 20 });
+  const lenLbl = h('span', {});
+  const opts = { lower: true, upper: true, digits: true, symbols: true };
+  const names = { lower: 'a–z', upper: 'A–Z', digits: '0–9', symbols: '!@#…' };
+  const regen = () => { lenLbl.textContent = len.value; out.textContent = genPassword(+len.value, opts); };
+  len.addEventListener('input', regen);
+  const checks = h('div', { class: 'checks' }, ...Object.keys(opts).map(k =>
+    h('label', {}, h('input', { type: 'checkbox', checked: true, onchange: ev => { opts[k] = ev.target.checked; regen(); } }), names[k])));
+  regen();
+  openDialog(h('form', { method: 'dialog', onsubmit: ev => ev.preventDefault() },
+    h('h2', {}, 'Gerador de senhas'),
+    out,
+    h('label', {}, h('span', {}, 'Tamanho: ', lenLbl), len),
+    checks,
+    h('div', { class: 'foot' },
+      h('button', { type: 'button', onclick: regen }, 'Gerar outra'),
+      h('button', { type: 'button', onclick: () => copy(out.textContent, 'Senha') }, 'Copiar'),
+      h('button', { type: 'button', class: 'primary', onclick: closeDialog }, 'Fechar')
+    )
+  ));
+}
+
+function dlgChangeMaster() {
+  const cur = h('input', { type: 'password', autocomplete: 'current-password' });
+  const pw = h('input', { type: 'password', autocomplete: 'new-password' });
+  const pw2 = h('input', { type: 'password', autocomplete: 'new-password' });
+  const [meter, meterLbl] = meterFor(pw);
+  const err = h('p', { class: 'err' });
+  const btn = h('button', { type: 'submit', class: 'primary' }, 'Trocar');
+  openDialog(h('form', {
+    method: 'dialog', onsubmit: async ev => {
+      ev.preventDefault(); err.textContent = '';
+      if (pw.value.length < 10) return void (err.textContent = 'A nova senha precisa de pelo menos 10 caracteres.');
+      if (pw.value !== pw2.value) return void (err.textContent = 'As novas senhas não conferem.');
+      busy(btn, true, 'Verificando…');
+      try { await unseal(readStored(), cur.value); }
+      catch { busy(btn, false, 'Trocar'); return void (err.textContent = 'Senha atual incorreta.'); }
+      busy(btn, true, 'Recriptografando…');
+      S.salt = crypto.getRandomValues(new Uint8Array(16));
+      S.iter = ITER;
+      S.key = await deriveKey(pw.value, S.salt, ITER);
+      S.vault.lastBackup = null; // backups antigos usam a senha antiga
+      await persist();
+      closeDialog(); renderList();
+      toast('Senha mestra alterada. Faça um novo backup.');
+    }
+  },
+    h('h2', {}, 'Trocar senha mestra'),
+    field('Senha atual', cur),
+    field('Nova senha mestra', pw), meter, meterLbl,
+    field('Confirmar nova senha', pw2),
+    err,
+    h('div', { class: 'foot' }, h('button', { type: 'button', onclick: closeDialog }, 'Cancelar'), btn)
+  ));
+  cur.focus();
+}
+
+// ---------- Backup ----------
+async function exportBackup() {
+  S.vault.lastBackup = Date.now() + 1;
+  const blob = await seal(S.key, S.salt, S.iter, S.vault);
+  localStorage.setItem(STORE_KEY, JSON.stringify(blob));
+  const file = new Blob([JSON.stringify(blob, null, 1)], { type: 'application/json' });
+  const a = h('a', { href: URL.createObjectURL(file), download: `cofre-backup-${new Date().toISOString().slice(0, 10)}.json` });
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  renderList();
+  toast('Backup exportado (criptografado com sua senha mestra)');
+}
+
+function importBackup() {
+  const input = h('input', { type: 'file', accept: '.json,application/json' });
+  input.addEventListener('change', async () => {
+    const f = input.files[0]; if (!f) return;
+    let blob;
+    try { blob = JSON.parse(await f.text()); } catch { return alert('Arquivo inválido.'); }
+    if (!isValidBlob(blob)) return alert('Este arquivo não é um backup do Cofre.');
+    if (readStored() && !confirm('Restaurar este backup vai SUBSTITUIR o cofre atual deste navegador. Continuar?')) return;
+    localStorage.setItem(STORE_KEY, JSON.stringify(blob));
+    S = null; clearInterval(ticker); codeCache.clear();
+    screenLock('Backup carregado. Digite a senha mestra usada quando ele foi criado.');
+  });
+  input.click();
+}
+
+// ---------- Tema ----------
+function toggleTheme() {
+  const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+  const cur = document.documentElement.dataset.theme || (dark ? 'dark' : 'light');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = next;
+  try { localStorage.setItem('cofre.theme', next); } catch {}
+}
+try { const t = localStorage.getItem('cofre.theme'); if (t) document.documentElement.dataset.theme = t; } catch {}
+
+// ---------- Início ----------
+if (!window.crypto || !crypto.subtle) {
+  mount(h('div', { class: 'card auth' }, h('h1', {}, 'Navegador não suportado'), h('p', { class: 'muted' }, 'Abra este arquivo no Chrome, Edge, Firefox ou Safari atualizados.')));
+} else {
+  readStored() ? screenLock() : screenSetup();
+}
+</script>
+</body>
+</html>

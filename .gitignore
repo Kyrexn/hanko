@@ -1,0 +1,25 @@
+node_modules
+dist
+extension/dist
+src-tauri/target
+src-tauri/gen/schemas
+src-tauri/gen/android/keystore.properties
+*.jks
+*.keystore
+Instaladores
+.env.local
+*.log
+.DS_Store
+installer/ui-dist
+installer/gen
+
+# Testes locais
+vite-ext.log
+src-tauri/gen/android/app/build
+src-tauri/gen/android/.gradle
+src-tauri/gen/android/build
+src-tauri/gen/android/buildSrc/build
+src-tauri/gen/android/buildSrc/.gradle
+src-tauri/gen/android/app/src/main/jniLibs
+src-tauri/gen/android/app/src/main/assets
+src-tauri/gen/android/local.properties

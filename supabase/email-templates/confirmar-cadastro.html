@@ -1,0 +1,15 @@
+<!-- Supabase → Authentication → Emails → "Confirm signup". Assunto sugerido: Seu código do Hanko: {{ .Token }} -->
+<div style="background:#121110;padding:40px 16px;font-family:'Segoe UI',Arial,sans-serif;color:#E9E4D8">
+  <div style="max-width:440px;margin:0 auto;background:#1A1816;border:1px solid #3A362F">
+    <div style="height:10px;background:#3A2A1E"></div>
+    <div style="padding:32px 32px 28px">
+      <div style="font-size:28px;letter-spacing:8px">判子</div>
+      <div style="font-size:11px;letter-spacing:3px;color:#8E887C;margin-top:4px">HANKO</div>
+      <p style="font-size:16px;line-height:1.6;margin:28px 0 8px">Confirme seu e-mail</p>
+      <p style="font-size:14px;line-height:1.6;color:#A9A397;margin:0 0 22px">Digite este código no app Hanko para terminar o cadastro:</p>
+      <div style="font-family:Consolas,'Courier New',monospace;font-size:36px;letter-spacing:10px;text-align:center;padding:18px 0;background:#24211D;border:1px dashed #C8372D;color:#E9E4D8">{{ .Token }}</div>
+      <p style="font-size:12px;line-height:1.6;color:#8E887C;margin:22px 0 0">O código vale por pouco tempo. Se você não pediu este cadastro, ignore este e-mail.</p>
+    </div>
+    <div style="height:10px;background:#3A2A1E"></div>
+  </div>
+</div>

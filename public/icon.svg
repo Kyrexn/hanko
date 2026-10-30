@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Hanko: o carimbo que prova que e voce. Selo vermelho, enso a pincel e a fechadura no centro. -->
+  <defs>
+    <filter id="stone" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.022" numOctaves="3" seed="11" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="5" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="brush" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" seed="4" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="6" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <radialGradient id="glow" cx="50%" cy="45%" r="60%">
+      <stop offset="0" stop-color="#2A2622"/>
+      <stop offset="1" stop-color="#121110"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1024" height="1024" rx="228" fill="url(#glow)"/>
+
+  <g transform="rotate(-5 512 512)">
+    <!-- selo (pedra com borda gasta) -->
+    <rect x="212" y="212" width="600" height="600" rx="54" fill="#C8372D" filter="url(#stone)"/>
+    <!-- lascas do carimbo -->
+    <g fill="#191614" opacity=".9">
+      <circle cx="236" cy="410" r="9"/><circle cx="790" cy="300" r="7"/><circle cx="640" cy="792" r="10"/>
+      <circle cx="300" cy="770" r="6"/><circle cx="792" cy="660" r="8"/><circle cx="420" cy="232" r="6"/>
+      <circle cx="268" cy="590" r="4"/><circle cx="742" cy="236" r="5"/>
+    </g>
+    <rect x="252" y="252" width="520" height="520" rx="34" fill="none" stroke="#F6F1E7" stroke-width="10" opacity=".85"/>
+
+    <!-- enso -->
+    <path filter="url(#brush)" d="M528 318 C 628 316, 706 396, 700 500 C 694 604, 612 676, 508 672 C 410 668, 330 594, 332 498 C 334 420, 382 356, 452 330"
+          fill="none" stroke="#F6F1E7" stroke-width="44" stroke-linecap="round"/>
+
+    <!-- fechadura -->
+    <circle cx="515" cy="472" r="52" fill="#F6F1E7"/>
+    <path d="M493 500 L 537 500 L 556 612 Q 515 628 474 612 Z" fill="#F6F1E7"/>
+  </g>
+</svg>

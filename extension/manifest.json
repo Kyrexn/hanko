@@ -1,0 +1,57 @@
+{
+  "manifest_version": 3,
+  "name": "Hanko",
+  "short_name": "Hanko",
+  "description": "Hanko — suas senhas e códigos 2FA, selados, com preenchimento automático.",
+  "version": "1.2.0",
+  "icons": {
+    "16": "icons/32.png",
+    "48": "icons/64.png",
+    "128": "icons/128.png"
+  },
+  "action": {
+    "default_title": "Hanko",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/32.png",
+      "32": "icons/32.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "permissions": [
+    "storage",
+    "alarms",
+    "activeTab",
+    "clipboardWrite",
+    "offscreen"
+  ],
+  "host_permissions": [
+    "https://*.supabase.co/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ],
+  "commands": {
+    "preencher": {
+      "suggested_key": { "default": "Ctrl+Shift+L" },
+      "description": "Preencher o login deste site"
+    }
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'none'; img-src 'self' data: https://icons.duckduckgo.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.pwnedpasswords.com"
+  },
+  "minimum_chrome_version": "116"
+}

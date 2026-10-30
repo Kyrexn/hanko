@@ -1,0 +1,167 @@
+/* =================== v1.0 — Laca negra (urushi, kintsugi e carimbo) ===================
+   Carregado depois de styles.css: troca a paleta, a tipografia e o acabamento das superfícies. */
+:root {
+  --ink: #0B0A09;
+  --ink-2: #121010;
+  --ink-3: #17140F;
+  --ink-4: #1C1813;
+  --line: #2C261D;
+  --line-soft: #1B1813;
+  --line-strong: #5E5240;
+  --washi: #EFE8D8;
+  --washi-2: #D4CCBA;
+  --washi-3: #BDB39E;
+  --muted: #A69C88;
+  --faint: #857B69;
+  --red: #E0533F;
+  --red-hi: #F2806D;
+  --seal: #B8302A;
+  --seal-text: #F7F0E2;
+  --gold: #C9A45C;
+  --gold-hi: #E8CB8A;
+  --gold-dim: rgba(201, 164, 92, .28);
+  --gold-faint: rgba(201, 164, 92, .12);
+  --enso: var(--gold);
+  --lacquer: linear-gradient(170deg, #18140F 0%, #110F0C 55%, #0D0B09 100%);
+  --brush: 'Shippori Mincho', 'Yuji Boku', serif;
+  --serif: 'Shippori Mincho', serif;
+}
+body { background: radial-gradient(120% 90% at 30% 0%, #15110D 0%, var(--ink) 60%) fixed, var(--ink); }
+.brush { font-weight: 500; letter-spacing: .01em; }
+.label { color: var(--gold); opacity: .8; letter-spacing: 3.5px; }
+::selection { background: rgba(201, 164, 92, .32); }
+:focus-visible { outline-color: var(--gold); }
+::-webkit-scrollbar-thumb { background: #2E271D; }
+
+/* Fundo: padrão shippō (círculos entrelaçados — "sete tesouros") em ouro quase invisível e folhas de ouro caindo */
+.paper { opacity: .22; }
+.shippo { position: absolute; inset: -48px; opacity: .055;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48'%3E%3Cg fill='none' stroke='%23C9A45C' stroke-width='1'%3E%3Ccircle cx='0' cy='0' r='24'/%3E%3Ccircle cx='48' cy='0' r='24'/%3E%3Ccircle cx='0' cy='48' r='24'/%3E%3Ccircle cx='48' cy='48' r='24'/%3E%3Ccircle cx='24' cy='24' r='24'/%3E%3C/g%3E%3C/svg%3E");
+  -webkit-mask-image: radial-gradient(ellipse 85% 75% at 50% 45%, transparent 20%, #000 85%);
+  mask-image: radial-gradient(ellipse 85% 75% at 50% 45%, transparent 20%, #000 85%);
+  animation: zShippo 120s linear infinite; }
+@keyframes zShippo { to { transform: translate(48px, 48px); } }
+.cloud.c1 { background: radial-gradient(circle, rgba(201, 164, 92, .06), transparent 60%); }
+.cloud.c2 { background: radial-gradient(circle, rgba(184, 48, 42, .13), transparent 62%); }
+.cloud.c3 { background: radial-gradient(circle, rgba(201, 164, 92, .03), transparent 60%); }
+.mote { top: -12px; bottom: auto; border-radius: 1px; background: linear-gradient(135deg, var(--gold-hi), #8C6A2E); opacity: 0; animation-name: zLeaf; box-shadow: 0 0 6px rgba(232, 203, 138, .35); }
+.mote.red { background: linear-gradient(135deg, #F07A68, var(--seal)); box-shadow: none; border-radius: 60% 0 60% 0; }
+@keyframes zLeaf {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 0; }
+  10% { opacity: .7; }
+  50% { transform: translate(-30px, 52vh) rotate(220deg); }
+  90% { opacity: .45; }
+  100% { transform: translate(18px, 106vh) rotate(420deg); opacity: 0; }
+}
+.sutra span { font-family: 'Yuji Boku', serif; color: var(--gold); opacity: .08; }
+
+/* Laca: painéis pretos com filete dourado e cantos em ouro */
+.scroll-paper, .confirm, .update-banner, .toast {
+  background:
+    linear-gradient(var(--gold), var(--gold)) top left / 16px 1px no-repeat,
+    linear-gradient(var(--gold), var(--gold)) top left / 1px 16px no-repeat,
+    linear-gradient(var(--gold), var(--gold)) top right / 16px 1px no-repeat,
+    linear-gradient(var(--gold), var(--gold)) top right / 1px 16px no-repeat,
+    linear-gradient(var(--gold), var(--gold)) bottom left / 16px 1px no-repeat,
+    linear-gradient(var(--gold), var(--gold)) bottom left / 1px 16px no-repeat,
+    linear-gradient(var(--gold), var(--gold)) bottom right / 16px 1px no-repeat,
+    linear-gradient(var(--gold), var(--gold)) bottom right / 1px 16px no-repeat,
+    var(--lacquer);
+  border: 1px solid var(--gold-dim);
+  box-shadow: inset 0 1px 0 rgba(232, 203, 138, .08), inset 0 0 0 5px #0D0B09, inset 0 0 0 6px rgba(201, 164, 92, .09), 0 30px 60px rgba(0, 0, 0, .5);
+}
+.rod { display: none; }
+.confirm.danger { border-color: rgba(184, 48, 42, .6); }
+.ed-foot { background: #0E0C0A; box-shadow: 0 -14px 18px -6px #0E0C0A; border-top-color: var(--gold-faint); }
+.glass { background: linear-gradient(165deg, rgba(28, 24, 19, .8), rgba(14, 12, 10, .72)); border: 1px solid var(--gold-faint); box-shadow: 0 18px 40px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(232, 203, 138, .06); }
+.health.glass { border-color: var(--gold-faint); }
+.health:not(:disabled):hover { border-color: var(--gold-dim); }
+.kv { border-bottom-color: rgba(201, 164, 92, .12); }
+.card-face { background: linear-gradient(135deg, #1F1A13, #0E0C0A 60%); border-color: var(--gold-dim); box-shadow: inset 0 1px 0 rgba(232, 203, 138, .12); }
+.letter, .forge-out, .kit-key, .code-box { background: #100E0B; border-color: var(--gold-faint); }
+.forge-out { box-shadow: inset 0 0 30px rgba(0, 0, 0, .5); }
+.kit-key { border: 1px dashed var(--gold-dim); }
+.notice { border-color: rgba(184, 48, 42, .4); }
+
+/* Tipografia: Mincho nos títulos e na marca */
+.page-title { font-weight: 500; letter-spacing: .02em; }
+.wordmark { font-family: var(--serif); font-weight: 500; font-size: 40px; letter-spacing: .38em; padding-left: .38em; text-transform: uppercase;
+  background: linear-gradient(100deg, #B48E46 20%, var(--gold-hi) 42%, #FFF3D4 50%, var(--gold-hi) 58%, #B48E46 80%); background-size: 260% 100%;
+  -webkit-background-clip: text; background-clip: text; }
+.splash .word { font-family: var(--serif); font-weight: 500; text-transform: uppercase; letter-spacing: .4em; padding-left: .4em; font-size: 40px; color: var(--gold-hi); }
+.auth-tagline { color: var(--washi-3); letter-spacing: 2px; }
+.ed-name { font-weight: 500; }
+
+/* Logo: sem brilho exagerado, só sombra de laca */
+.logo, .nav-brand .logo { filter: drop-shadow(0 6px 14px rgba(0, 0, 0, .55)); }
+
+/* Botões */
+.btn { border-color: var(--line-strong); letter-spacing: .6px; }
+.btn:hover { letter-spacing: 1.2px; border-color: var(--gold-dim); }
+.btn:not(.btn-solid):hover { background: var(--gold-faint); }
+.btn-solid { background: linear-gradient(180deg, #C63A31, var(--seal)); color: var(--seal-text); border-color: #D4574B; box-shadow: inset 0 1px 0 rgba(255, 220, 200, .25), 0 8px 22px rgba(184, 48, 42, .28); }
+.btn-solid:hover { background: linear-gradient(180deg, #D2453B, #C1352E); }
+.btn-solid::after { background: radial-gradient(circle at var(--x, 50%) var(--y, 50%), rgba(255, 240, 220, .18), transparent 60%); }
+.btn-solid::before { background: linear-gradient(100deg, transparent, rgba(255, 230, 200, .35), transparent); }
+.btn-link, .ed-add, a { color: var(--gold); }
+.btn-link:hover, .ed-add:hover, a:hover { color: var(--gold-hi); }
+.btn-quiet { color: var(--washi-3); border-bottom-color: var(--gold-dim); }
+.btn-quiet:hover { color: var(--gold-hi); }
+.icon-btn:hover { border-color: var(--gold-dim); color: var(--gold-hi); }
+.dialog-x:hover, .nav-add:hover { color: var(--gold-hi); border-color: var(--gold); }
+.forge-re:hover { border-color: var(--gold); color: var(--gold-hi); }
+
+/* Campos: linha dourada ao focar */
+.input { border-bottom-color: #3A3226; }
+.input:not(textarea) { background-image: linear-gradient(90deg, var(--gold), var(--gold-hi)); }
+textarea.input:focus, .code-box:focus { border-color: var(--gold); }
+.select { background: #100E0B; }
+.slider input, .check input { accent-color: var(--seal); }
+
+/* Barra lateral */
+.nav { background: linear-gradient(90deg, rgba(6, 5, 4, .55), rgba(6, 5, 4, .15)); border-right: 1px solid var(--gold-faint); }
+.ink-pill { background: linear-gradient(90deg, rgba(201, 164, 92, .13), rgba(201, 164, 92, .02) 70%, transparent); border-left-color: var(--gold); }
+.nav-item.on .cat-ico { color: var(--gold); }
+.nav-foot { border-top-color: var(--gold-faint); }
+.tool { background: rgba(201, 164, 92, .03); }
+.tool .brush { color: var(--gold); }
+.tool:hover { border-color: var(--gold-dim); background: var(--gold-faint); }
+.tool.lock .brush { color: var(--red); }
+.sync-pill i { background: var(--gold); box-shadow: 0 0 8px rgba(201, 164, 92, .5); }
+
+/* Lista */
+.row { border-bottom-color: rgba(201, 164, 92, .07); }
+.row::before { background: linear-gradient(90deg, rgba(201, 164, 92, .08), transparent 70%); }
+.row.sel { background: rgba(201, 164, 92, .05); }
+.row.sel::after { background: var(--gold); }
+.avatar { border-color: rgba(201, 164, 92, .3); background: #15120E; }
+.avatar.on { background: var(--gold); border-color: var(--gold); color: #120F0A; }
+.mini-code + .mini-code { border-top-color: rgba(201, 164, 92, .08); }
+.mini-copy:hover { color: var(--gold-hi) !important; }
+.kbd { border-color: var(--gold-faint); color: var(--gold); }
+
+/* Escolhas: abas, chips e tipos */
+.seg button.on { background: var(--gold-faint); box-shadow: inset 0 -2px 0 var(--gold); }
+.ed-chip.on, .m-chip.on { border-color: var(--gold); color: var(--gold-hi); background: var(--gold-faint); }
+.ed-kind.on { border-color: var(--gold); background: linear-gradient(180deg, rgba(201, 164, 92, .14), rgba(201, 164, 92, .02)); }
+.ed-kind.on .cat-ico { color: var(--gold); }
+.ed-sec { background: rgba(6, 5, 4, .35); }
+.ed-sec.open { border-color: var(--gold-faint); }
+.ed-tool.gen { color: var(--gold-hi); border-color: var(--gold-dim); }
+.ed-tool.gen:hover, .ed-tool.gen.on { background: var(--gold-faint); }
+.forge-inline { border-color: var(--gold-dim); }
+.ed-drop:hover { border-color: var(--gold); background: var(--gold-faint); }
+.ch-s { color: var(--gold-hi); }
+.ch-u { color: #FFF6E4; }
+.steps .on .brush { color: var(--gold); }
+.update-steps .on { color: var(--gold-hi); }
+
+/* Celular */
+.m-nav { background: rgba(9, 8, 7, .92); border-top: 1px solid var(--gold-faint); }
+.m-nav button.on { color: var(--gold-hi); border-bottom-color: var(--gold); }
+.m-nav .m-plus { background: linear-gradient(180deg, #C63A31, var(--seal)); color: var(--seal-text); box-shadow: 0 6px 18px rgba(184, 48, 42, .35); }
+
+/* Aviso e véu */
+.toast-timer { background: var(--gold); }
+.toast-action:hover { border-color: var(--gold); background: var(--gold-faint); }
+.veil { background: rgba(8, 7, 6, .55); }
