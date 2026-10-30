@@ -14,6 +14,11 @@ $ver = (Get-Content src-tauri\tauri.conf.json -Raw | ConvertFrom-Json).version
 $out = Join-Path $root 'Instaladores'
 New-Item -ItemType Directory -Force $out | Out-Null
 
+# A extensão vai primeiro: o app do Windows a leva embutida (e mantém a pasta dela atualizada).
+"=== Extensão $ver ==="
+node extension/build.mjs
+if ($LASTEXITCODE -ne 0) { throw 'Falha no build da extensão' }
+
 "=== Windows $ver ==="
 npx tauri build --no-bundle *>&1 | ForEach-Object { "$_" } | Select-Object -Last 3
 if ($LASTEXITCODE -ne 0) { throw 'Falha no build do Windows' }
@@ -36,9 +41,6 @@ npx tauri android build --apk --target aarch64 *>&1 | ForEach-Object { "$_" } | 
 if ($LASTEXITCODE -ne 0) { throw 'Falha no build do Android' }
 Copy-Item 'src-tauri\gen\android\app\build\outputs\apk\universal\release\app-universal-release.apk' "$out\Hanko-$ver-android.apk" -Force
 
-"=== Extensão $ver ==="
-node extension/build.mjs
-if ($LASTEXITCODE -ne 0) { throw 'Falha no build da extensão' }
 $extDir = Join-Path $out 'Hanko-extensao-chrome'
 if (Test-Path $extDir) { Remove-Item $extDir -Recurse -Force }
 Copy-Item 'extension\dist' $extDir -Recurse
