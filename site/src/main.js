@@ -17,7 +17,7 @@ const UPDATES = 'https://kldvivevydcbjhveqibf.supabase.co/storage/v1/object/publ
 })();
 
 /* ---------- Downloads ao vivo ---------- */
-const mb = n => `${(n / 1048576).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}00a0MB`;
+const mb = n => `${(n / 1048576).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} MB`;
 const fmtDate = iso => new Date(iso).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
 
 async function size(url) {
