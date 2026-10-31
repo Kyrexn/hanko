@@ -51,12 +51,44 @@ struct Info {
     size_mb: f64,
 }
 
+/// Progresso real: `pct` vem de bytes copiados ou arquivos removidos de verdade (não de tempo).
 #[derive(Serialize, Clone)]
 struct Progress {
-    pct: u32,
+    pct: f64,
     step: u32,
     text: String,
+    done: u64,
+    total: u64,
 }
+
+/// Conta unidades de trabalho reais (bytes ou arquivos) e avisa a interface só quando o número muda.
+struct Meter<'a> {
+    app: Option<&'a AppHandle>,
+    total: u64,
+    done: u64,
+    last: f64,
+    step: u32,
+}
+
+impl<'a> Meter<'a> {
+    fn new(app: Option<&'a AppHandle>, total: u64) -> Self {
+        Meter { app, total: total.max(1), done: 0, last: -1.0, step: 0 }
+    }
+    fn add(&mut self, n: u64, step: u32, text: &str) {
+        self.done = (self.done + n).min(self.total);
+        let pct = (self.done as f64 * 1000.0 / self.total as f64).floor() / 10.0;
+        if pct != self.last || step != self.step || self.done == self.total {
+            self.last = pct;
+            self.step = step;
+            if let Some(app) = self.app {
+                let _ = app.emit("progress", Progress { pct, step, text: text.into(), done: self.done, total: self.total });
+            }
+        }
+    }
+}
+
+/// Peso de uma etapa sem bytes (atalho, registro): 256 KB, para aparecer no progresso sem distorcer.
+const STEP_UNIT: u64 = 256 * 1024;
 
 fn payload_size() -> u64 {
     env!("PAYLOAD_SIZE").parse().unwrap_or(1)
@@ -81,11 +113,6 @@ fn desktop_link() -> Option<PathBuf> {
     dirs::desktop_dir().map(|d| d.join("Hanko.lnk"))
 }
 
-fn report(app: Option<&AppHandle>, pct: u32, step: u32, text: &str) {
-    if let Some(app) = app {
-        let _ = app.emit("progress", Progress { pct, step, text: text.into() });
-    }
-}
 
 /// Fecha o Hanko se estiver aberto (senão o arquivo fica travado).
 fn close_app() {
@@ -133,28 +160,48 @@ fn make_link(target: &Path, link: &Path) -> Result<(), String> {
     sl.create_lnk(link).map_err(|e| e.to_string())
 }
 
+/// Copia um arquivo em pedaços, somando os bytes no medidor.
+fn copy_counted(from: &Path, to: &Path, m: &mut Meter, step: u32, text: &str) -> Result<(), String> {
+    let mut src = fs::File::open(from).map_err(|e| e.to_string())?;
+    let mut dst = fs::File::create(to).map_err(|e| e.to_string())?;
+    let mut buf = vec![0u8; 256 * 1024];
+    loop {
+        let n = src.read(&mut buf).map_err(|e| e.to_string())?;
+        if n == 0 {
+            break;
+        }
+        dst.write_all(&buf[..n]).map_err(|e| e.to_string())?;
+        m.add(n as u64, step, text);
+    }
+    dst.flush().map_err(|e| e.to_string())
+}
+
 fn do_install(app: Option<&AppHandle>, dir: &Path, desktop: bool, start_menu: bool) -> Result<(), String> {
-    report(app, 2, 1, "Preparando…");
+    // Trabalho total, em bytes reais: o app descomprimido + a cópia do desinstalador + etapas pequenas.
+    let me = std::env::current_exe().ok();
+    let un_path = dir.join("uninstall.exe");
+    let self_size = me.as_ref().filter(|p| **p != un_path).and_then(|p| fs::metadata(p).ok()).map(|m| m.len()).unwrap_or(0);
+    let mut m = Meter::new(app, payload_size() + self_size + STEP_UNIT * 4);
+
+    m.add(0, 1, "Fechando o Hanko, se estiver aberto");
     close_app();
     remove_legacy();
     fs::create_dir_all(dir).map_err(|e| format!("Não consegui criar a pasta: {e}"))?;
+    m.add(STEP_UNIT, 1, "Pasta pronta");
 
-    // Descomprime o app com progresso real.
-    let total = payload_size();
+    // Descomprime o app: cada pedaço escrito no disco conta no progresso.
     let tmp = dir.join("Hanko.exe.novo");
     {
         let mut dec = flate2::read::DeflateDecoder::new(PAYLOAD);
         let mut out = fs::File::create(&tmp).map_err(|e| e.to_string())?;
         let mut buf = vec![0u8; 256 * 1024];
-        let mut done: u64 = 0;
         loop {
             let n = dec.read(&mut buf).map_err(|e| e.to_string())?;
             if n == 0 {
                 break;
             }
             out.write_all(&buf[..n]).map_err(|e| e.to_string())?;
-            done += n as u64;
-            report(app, 5 + (done * 70 / total) as u32, 2, "Copiando o Hanko…");
+            m.add(n as u64, 2, "Copiando o Hanko");
         }
         out.flush().map_err(|e| e.to_string())?;
     }
@@ -169,13 +216,12 @@ fn do_install(app: Option<&AppHandle>, dir: &Path, desktop: bool, start_menu: bo
     }
 
     // O próprio instalador vira o desinstalador.
-    report(app, 80, 3, "Criando atalhos…");
-    if let Ok(me) = std::env::current_exe() {
-        let un = dir.join("uninstall.exe");
-        if me != un {
-            let _ = fs::copy(&me, &un);
+    if let Some(me) = me.as_ref().filter(|p| **p != un_path) {
+        if copy_counted(me, &un_path, &mut m, 3, "Guardando o desinstalador").is_err() {
+            let _ = fs::copy(me, &un_path);
         }
     }
+    m.add(0, 3, "Criando atalhos");
     if start_menu {
         if let Some(sm) = start_menu_dir() {
             make_link(&exe, &sm.join("Hanko.lnk"))?;
@@ -189,7 +235,8 @@ fn do_install(app: Option<&AppHandle>, dir: &Path, desktop: bool, start_menu: bo
         }
     }
 
-    report(app, 92, 4, "Registrando no Windows…");
+    m.add(STEP_UNIT, 3, "Atalhos criados");
+    m.add(0, 4, "Registrando no Windows");
     let (key, _) = RegKey::predef(HKEY_CURRENT_USER).create_subkey(UNINSTALL_KEY).map_err(|e| e.to_string())?;
     let un = format!("\"{}\" --uninstall", dir.join("uninstall.exe").display());
     let set = |k: &str, v: &str| key.set_value(k, &v.to_string()).map_err(|e| e.to_string());
@@ -203,27 +250,71 @@ fn do_install(app: Option<&AppHandle>, dir: &Path, desktop: bool, start_menu: bo
     key.set_value("EstimatedSize", &((payload_size() / 1024) as u32)).map_err(|e| e.to_string())?;
     key.set_value("NoModify", &1u32).map_err(|e| e.to_string())?;
     key.set_value("NoRepair", &1u32).map_err(|e| e.to_string())?;
+    m.add(STEP_UNIT, 4, "Registrado");
 
-    report(app, 100, 5, "Pronto.");
+    m.add(STEP_UNIT, 5, "Pronto");
     Ok(())
+}
+
+/// Todos os arquivos dentro de uma pasta (para remover um a um e contar de verdade).
+fn files_in(dir: &Path, out: &mut Vec<PathBuf>) {
+    let Ok(entries) = fs::read_dir(dir) else { return };
+    for e in entries.flatten() {
+        let p = e.path();
+        if p.is_dir() {
+            files_in(&p, out);
+        } else {
+            out.push(p);
+        }
+    }
 }
 
 fn do_uninstall(app: Option<&AppHandle>, remove_data: bool) -> Result<(), String> {
     let dir = installed().map(|(_, d)| d).unwrap_or_else(default_dir);
-    report(app, 10, 1, "Fechando o Hanko…");
+    let me = std::env::current_exe().ok();
+
+    // Lista tudo o que vai sair: o progresso é o número de arquivos removidos de verdade.
+    let mut shortcuts = Vec::new();
+    if let Some(sm) = start_menu_dir() {
+        files_in(&sm, &mut shortcuts);
+    }
+    if let Some(dl) = desktop_link().filter(|d| d.exists()) {
+        shortcuts.push(dl);
+    }
+    let mut program = Vec::new();
+    files_in(&dir, &mut program);
+    program.retain(|p| Some(p) != me.as_ref()); // este desinstalador sai por último, depois de fechar
+    let mut data = Vec::new();
+    if remove_data {
+        if let Some(local) = dirs::data_local_dir() {
+            files_in(&local.join(APP_DATA_ID), &mut data);
+        }
+    }
+    let mut m = Meter::new(app, (shortcuts.len() + program.len() + data.len()) as u64 + 2);
+
+    m.add(0, 1, "Fechando o Hanko");
     close_app();
-    report(app, 35, 2, "Removendo atalhos…");
+    m.add(1, 1, "Hanko fechado");
+
+    for f in &shortcuts {
+        let _ = fs::remove_file(f);
+        m.add(1, 2, "Removendo atalhos");
+    }
     if let Some(sm) = start_menu_dir() {
         let _ = fs::remove_dir_all(sm);
     }
-    if let Some(dl) = desktop_link() {
-        let _ = fs::remove_file(dl);
+
+    for f in &program {
+        let _ = fs::remove_file(f);
+        m.add(1, 3, "Removendo o programa");
     }
-    report(app, 60, 3, "Removendo arquivos…");
-    let _ = fs::remove_file(dir.join(APP_EXE));
     let _ = RegKey::predef(HKEY_CURRENT_USER).delete_subkey_all(UNINSTALL_KEY);
+
     if remove_data {
-        report(app, 80, 4, "Apagando os dados deste PC…");
+        for f in &data {
+            let _ = fs::remove_file(f);
+            m.add(1, 4, "Apagando os dados deste computador");
+        }
         if let Some(local) = dirs::data_local_dir() {
             let _ = fs::remove_dir_all(local.join(APP_DATA_ID));
         }
@@ -233,7 +324,7 @@ fn do_uninstall(app: Option<&AppHandle>, remove_data: bool) -> Result<(), String
         .args(["/C", &format!("ping 127.0.0.1 -n 4 >nul & rmdir /S /Q \"{}\"", dir.display())])
         .creation_flags(NO_WINDOW)
         .spawn();
-    report(app, 100, 5, "Pronto.");
+    m.add(1, 5, "Pronto");
     Ok(())
 }
 
@@ -316,7 +407,7 @@ fn main() {
         .manage(Opts { mode, restart })
         .invoke_handler(tauri::generate_handler![info, install, uninstall, launch, should_restart, finish])
         .setup(move |app| {
-            let (w, h) = if mode == Mode::Update { (440.0, 300.0) } else { (820.0, 520.0) };
+            let (w, h) = if mode == Mode::Update { (520.0, 360.0) } else { (860.0, 540.0) };
             let title = match mode {
                 Mode::Uninstall => "Desinstalar o Hanko",
                 Mode::Update => "Atualizando o Hanko",

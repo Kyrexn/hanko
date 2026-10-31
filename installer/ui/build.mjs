@@ -15,7 +15,7 @@ copyFileSync(join(here, 'index.html'), join(out, 'index.html'));
 copyFileSync(join(here, 'main.css'), join(out, 'main.css'));
 
 // Caracteres que aparecem no instalador (pincel) + latim.
-const used = new Set([...'判子金庫済新別心を静めて鍵を守る一二三四'].map(c => c.codePointAt(0)));
+const used = new Set([...'判子済新別鍵符手'].map(c => c.codePointAt(0)));
 const latin = [0x20, 0x7e];
 
 function inRange(range, cp) {
@@ -27,7 +27,7 @@ function inRange(range, cp) {
 
 let css = '';
 for (const [pkg, file, family, weight] of [
-  ['yuji-boku', '400.css', 'Yuji Boku', 400],
+  ['shippori-mincho', '500.css', 'Shippori Mincho', 500],
   ['zen-kaku-gothic-new', '400.css', 'Zen Kaku Gothic New', 400],
   ['zen-kaku-gothic-new', '500.css', 'Zen Kaku Gothic New', 500],
   ['dm-mono', '400.css', 'DM Mono', 400]

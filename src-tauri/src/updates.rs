@@ -5,7 +5,7 @@
 
 use std::path::PathBuf;
 use std::sync::Mutex;
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_updater::UpdaterExt;
 
 #[derive(Default)]
@@ -32,8 +32,27 @@ pub async fn update_prepare(app: AppHandle) -> Result<Option<Ready>, String> {
     let Some(update) = app.updater().map_err(err)?.check().await.map_err(err)? else {
         return Ok(None);
     };
+    // Avisa a interface com bytes reais (só quando o número inteiro de % muda).
+    let _ = app.emit("update-progress", (0u64, 0u64, update.version.clone()));
+    let (mut done, mut last) = (0u64, u64::MAX);
+    let emitter = app.clone();
+    let version = update.version.clone();
     // download() só devolve os bytes se a assinatura conferir com a chave pública embutida no app.
-    let bytes = update.download(|_, _| {}, || {}).await.map_err(err)?;
+    let bytes = update
+        .download(
+            move |chunk, total| {
+                done += chunk as u64;
+                let total = total.unwrap_or(0);
+                let pct = if total > 0 { done * 100 / total } else { done / 1_048_576 };
+                if pct != last {
+                    last = pct;
+                    let _ = emitter.emit("update-progress", (done, total, version.clone()));
+                }
+            },
+            || {},
+        )
+        .await
+        .map_err(err)?;
     let dir = app.path().app_local_data_dir().map_err(err)?.join("atualizacao");
     std::fs::create_dir_all(&dir).map_err(err)?;
     let path = dir.join(format!("Hanko-{}-Setup.exe", update.version));

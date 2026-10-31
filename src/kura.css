@@ -410,3 +410,16 @@ textarea.input { border-radius: 10px; }
 .ext-steps .row-actions { margin-top: 8px; }
 .ext-path { display: block; margin-top: 6px; padding: 8px 10px; border-radius: 8px; background: #0F0D0B; border: 1px solid var(--line); font-family: var(--mono); font-size: 12px; color: var(--washi-2); word-break: break-all; }
 .ext-ok { display: flex; flex-direction: column; gap: 4px; }
+
+/* Aviso de atualização: moldura dourada animada, anel e barra com progresso real */
+.update-pill { border: 1px solid transparent; background: linear-gradient(var(--lacquer-solid, #120F0C), var(--lacquer-solid, #120F0C)) padding-box,
+  conic-gradient(from var(--a, 0deg), rgba(201,164,92,.15), var(--gold-hi), rgba(201,164,92,.15) 40%, rgba(184,48,42,.6) 70%, rgba(201,164,92,.15)) border-box;
+  animation: zRise .45s ease both, zSpinBorder 6s linear infinite; }
+@property --a { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+@keyframes zSpinBorder { to { --a: 360deg; } }
+.update-ring { position: relative; flex: none; width: 40px; height: 40px; display: grid; place-items: center; }
+.update-ring .ring { position: absolute; inset: 0; }
+.update-ring b { position: relative; font-family: var(--serif); font-weight: 500; font-size: 12px; color: var(--gold-hi); }
+.update-pill.ready .update-ring b { font-size: 17px; }
+.update-bar { display: block; height: 3px; margin-top: 7px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.update-bar i { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, #B48E46, var(--gold-hi)); box-shadow: 0 0 8px rgba(232,203,138,.5); transition: width .25s linear; }
